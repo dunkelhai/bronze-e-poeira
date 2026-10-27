@@ -18,6 +18,8 @@ export const PAL = {
   egeuEscuro: 0x123f6a,
   pele: 0xd9976a,
   madeira: 0x7a4a2a,
+  vidaAliada: 0x6fd06a,
+  vidaRival: 0xff5a4a,
   branco: 0xffffff,
   preto: 0x000000,
 } as const;
