@@ -585,6 +585,7 @@ export class BattleScene extends Phaser.Scene {
     if (this.phase !== 'plan' || this.b.result) return;
     this.phase = 'resolve';
     this.hoverId = null;
+    this.setHint('');
     this.refresh();
     this.showAnnounce('Calídria avança!');
     await wait(this, 350);
