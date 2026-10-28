@@ -115,6 +115,14 @@ export class BattleScene extends Phaser.Scene {
     this.b = createBattle();
     this.rng = mulberry32((Date.now() & 0xffffffff) >>> 0);
     this.views.clear();
+    // a instância da cena é reaproveitada no restart: zere as listas do HUD
+    this.recruitBtns = [];
+    this.orderBtns = [];
+    this.moraleText = [];
+    this.bannerFill = [];
+    this.bannerText = [];
+    this.bannerBox = [];
+    this.spaceDown = false;
     this.selectedId = null;
     this.hoverId = null;
     this.phase = 'plan';
@@ -158,6 +166,7 @@ export class BattleScene extends Phaser.Scene {
     for (const u of this.b.units) this.addView(u);
     this.bindKeys();
 
+    this.events.off(Phaser.Scenes.Events.RESUME);
     this.events.on(Phaser.Scenes.Events.RESUME, () => this.refresh());
     this.startPlayerTurn(true);
   }
@@ -229,14 +238,18 @@ export class BattleScene extends Phaser.Scene {
     for (const side of [0, 1] as const) {
       const x0 = side === 0 ? 56 : 816;
       text(this, x0, 14, names[side], 20, TEAM[side].css);
-      const box = this.add.container(x0 + 290 - 130, 26).setDepth(510);
+      const box = this.add.container(x0 + 270, 26).setDepth(510);
       const bg = this.add.rectangle(0, 0, 264, 18, PAL.tinta).setStrokeStyle(2, PAL.bronze);
       const fill = this.add.rectangle(-130, 0, 260, 12, TEAM[side].base).setOrigin(0, 0.5);
       box.add([bg, fill]);
       this.bannerBox.push(box);
       this.bannerFill.push(fill);
-      this.bannerText.push(text(this, x0 + 160, 40, '', 16, PALS.marfim, '600').setOrigin(0.5, 0));
-      this.moraleText.push(text(this, x0 + 290, 44, '', 16, PALS.marfim, '600').setOrigin(0, 0));
+      this.bannerText.push(
+        text(this, x0 + 270, 26, '', 16, PALS.marfim, '800')
+          .setOrigin(0.5)
+          .setDepth(515),
+      );
+      this.moraleText.push(text(this, x0 + 408, 44, '', 16, PALS.marfim, '600').setOrigin(1, 0));
     }
     this.add.image(64, 56, 'coin').setDepth(510);
     this.goldText = text(this, 80, 44, '', 18, PALS.ceuHorizonte);
@@ -261,7 +274,7 @@ export class BattleScene extends Phaser.Scene {
     bot.fillStyle(PAL.preto, 0.45);
     bot.fillRoundedRect(40, 572, 1200, 140, 12);
     bot.fillStyle(PAL.tinta, 0.5);
-    bot.fillRoundedRect(684, 582, 282, 120, 10);
+    bot.fillRoundedRect(682, 582, 262, 120, 10);
 
     RECRUIT_ORDER.forEach((kind, i) => {
       const x = 108 + i * 128;
@@ -285,12 +298,16 @@ export class BattleScene extends Phaser.Scene {
       this.recruitBtns.push(btn);
     });
 
-    this.selName = text(this, 825, 588, '', 18, PALS.marfim).setOrigin(0.5, 0);
-    this.selStats = text(this, 825, 614, '', 16, PALS.areia, '600').setOrigin(0.5, 0);
-    this.selHint = text(this, 825, 640, '', 16, PALS.areia, '600').setOrigin(0.5, 0);
+    this.selName = text(this, 813, 584, '', 18, PALS.marfim).setOrigin(0.5, 0);
+    this.selStats = text(this, 813, 606, '', 16, PALS.areia, '600').setOrigin(0.5, 0);
+    this.selHint = text(this, 813, 626, '', 16, PALS.marfim, '600')
+      .setOrigin(0.5, 0)
+      .setAlign('center')
+      .setLineSpacing(-4)
+      .setWordWrapWidth(254);
     ORDERS.forEach((o, i) => {
-      const btn = new Button(this, 735 + i * 90, 682, {
-        w: 84,
+      const btn = new Button(this, 729 + i * 84, 682, {
+        w: 80,
         h: 34,
         label: ORDER_NAME[o],
         size: 16,
@@ -302,12 +319,13 @@ export class BattleScene extends Phaser.Scene {
 
     const abil: Ability[] = ['brado', 'muralha'];
     abil.forEach((ab, i) => {
-      const btn = new Button(this, 1050, 612 + i * 62, {
-        w: 160,
+      const btn = new Button(this, 1043, 612 + i * 62, {
+        w: 190,
         h: 54,
         label: '',
         hotkey: i === 0 ? 'Q' : 'W',
         size: 16,
+        textDx: 12,
         color: PAL.bronzeEscuro,
         onClick: () => this.doAbility(ab),
       });
@@ -316,12 +334,12 @@ export class BattleScene extends Phaser.Scene {
       this.abilityBtns[ab] = btn;
     });
 
-    this.endBtn = new Button(this, 1182, 642, {
-      w: 100,
+    this.endBtn = new Button(this, 1186, 642, {
+      w: 92,
       h: 124,
       label: 'Encerrar\nturno',
       hotkey: 'E',
-      size: 18,
+      size: 16,
       color: PAL.egeu,
       onClick: () => void this.endTurn(),
     });
@@ -828,7 +846,7 @@ export class BattleScene extends Phaser.Scene {
     for (const s of [0, 1] as const) {
       const st = b.sides[s];
       this.bannerFill[s].width = 260 * Math.max(0, st.banner / st.bannerMax);
-      this.bannerText[s].setText(`Estandarte ${st.banner}/${st.bannerMax}`);
+      this.bannerText[s].setText(`${st.banner}/${st.bannerMax}`);
       this.moraleText[s].setText(st.generalAlive ? 'Moral firme' : 'Moral −25%');
       this.moraleText[s].setColor(st.generalAlive ? PALS.verde : PALS.carmimClaro);
     }
@@ -852,7 +870,7 @@ export class BattleScene extends Phaser.Scene {
       this.selStats.setText(
         `ATQ ${st.ataque}  DEF ${st.defesa}  MOV ${st.movimento}  ALC ${st.alcance}`,
       );
-      this.selHint.setText(st.papel.length > 34 ? `${st.papel.slice(0, 33)}…` : st.papel);
+      this.selHint.setText(st.papel);
     } else {
       this.selName.setText('Nenhuma tropa');
       this.selStats.setText('Clique numa tropa ou use ←/→');

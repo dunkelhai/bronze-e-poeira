@@ -15,10 +15,25 @@ const W = 1400; // camadas mais largas que a tela para o deslocamento
 
 function genSky(scene: Phaser.Scene): void {
   const g = scene.add.graphics();
-  g.fillGradientStyle(PAL.ceuAlto, PAL.ceuAlto, PAL.ceuPoente, PAL.ceuPoente, 1);
-  g.fillRect(0, 0, 1280, 300);
-  g.fillGradientStyle(PAL.ceuPoente, PAL.ceuPoente, PAL.ceuHorizonte, PAL.ceuHorizonte, 1);
-  g.fillRect(0, 300, 1280, 160);
+  // degradê em faixas (fillGradientStyle não funciona em generateTexture/canvas)
+  const stops: [number, number][] = [
+    [0, PAL.ceuAlto],
+    [300, PAL.ceuPoente],
+    [460, PAL.ceuHorizonte],
+  ];
+  const lerp = (a: number, b: number, t: number) => {
+    const ca = Phaser.Display.Color.IntegerToColor(a);
+    const cb = Phaser.Display.Color.IntegerToColor(b);
+    const c = Phaser.Display.Color.Interpolate.ColorWithColor(ca, cb, 100, Math.round(t * 100));
+    return Phaser.Display.Color.GetColor(c.r, c.g, c.b);
+  };
+  for (let y = 0; y < 460; y += 4) {
+    const i = y < 300 ? 0 : 1;
+    const [y0, c0] = stops[i];
+    const [y1, c1] = stops[i + 1];
+    g.fillStyle(lerp(c0, c1, (y - y0) / (y1 - y0)), 1);
+    g.fillRect(0, y, 1280, 4);
+  }
   g.fillStyle(PAL.ceuHorizonte, 1);
   g.fillRect(0, 460, 1280, 260);
   // sol baixo com halos

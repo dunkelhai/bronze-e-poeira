@@ -10,6 +10,8 @@ export interface ButtonOpts {
   label: string;
   hotkey?: string;
   size?: number;
+  /** deslocamento horizontal do rótulo (abre espaço para a tecla) */
+  textDx?: number;
   color?: number;
   onClick: () => void;
 }
@@ -34,7 +36,7 @@ export class Button {
     this.c = scene.add.container(x, y).setDepth(500);
     this.bg = scene.add.graphics();
     this.text = scene.add
-      .text(0, 0, o.label, {
+      .text(o.textDx ?? 0, 0, o.label, {
         fontFamily: FONT_UI,
         fontStyle: '800',
         fontSize: `${o.size ?? 20}px`,

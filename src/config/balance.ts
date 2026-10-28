@@ -59,7 +59,7 @@ export const UNITS: Record<UnitKind, UnitStats> = {
   },
   cavaleiro: {
     nome: 'Cavaleiro da Poeira',
-    papel: 'Move 3. Investida +60%. x1,75 contra arqueiros e cerco.',
+    papel: 'Move 3. Investida +60%. x1,75 vs arqueiros e cerco.',
     custo: 65,
     vida: 30,
     ataque: 18,
@@ -83,7 +83,7 @@ export const UNITS: Record<UnitKind, UnitStats> = {
   },
   general: {
     nome: 'Estratego',
-    papel: 'Único. Se cair, o exército perde moral (-25% de ataque).',
+    papel: 'Único. Se cair, o exército perde 25% do ataque.',
     custo: 0,
     vida: 70,
     ataque: 18,

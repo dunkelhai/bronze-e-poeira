@@ -465,9 +465,9 @@ function genFx(scene: Phaser.Scene): void {
     line(gg, 4, 12, 12, 20, 3, PAL.bronze);
   });
   icon('buff_def', (gg) => {
-    circle(gg, 12, 12, 9, PAL.bronze, 3);
-    gg.lineStyle(2, PAL.bronzeEscuro, 1);
-    gg.strokeCircle(12, 12, 5);
+    poly(gg, [4, 4, 20, 4, 20, 12, 12, 21, 4, 12], PAL.marfim, 3);
+    gg.fillStyle(PAL.egeu, 1);
+    gg.fillRect(10, 6, 4, 11);
   });
   icon('coin', (gg) => {
     circle(gg, 12, 12, 9, PAL.bronze, 3);

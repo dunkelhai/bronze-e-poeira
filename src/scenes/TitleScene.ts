@@ -15,6 +15,7 @@ const CONTROLS: [string, string][] = [
   ['Q / W', 'Brado do Vale / Muralha de Bronze (general)'],
   ['E', 'encerrar o turno (segure Espaço para acelerar o combate)'],
   ['Esc / R', 'pausa / reiniciar'],
+  ['Mouse', 'botões e clique na tropa; mouse sobre inimigo = previsão'],
 ];
 
 export class TitleScene extends Phaser.Scene {
@@ -92,7 +93,7 @@ export class TitleScene extends Phaser.Scene {
       .setDepth(460);
 
     CONTROLS.forEach(([k, d], i) => {
-      const y = 346 + i * 34;
+      const y = 340 + i * 31;
       this.add
         .text(392, y, k, {
           fontFamily: FONT_UI,
