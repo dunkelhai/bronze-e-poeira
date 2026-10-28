@@ -17,10 +17,12 @@ impacto metálico, cornetas) são sintetizados com Web Audio.
 - **Campo:** casas 0 a 11. Seu quartel e estandarte ficam na casa 0 (esquerda) e os de Quelmora na
   casa 11 (direita). Cabe 1 unidade por casa por lado. Ninguém atravessa um inimigo nem entra no
   acampamento rival; aliados abrem passagem (atravessar uma casa com aliado não gasta movimento).
-- **Economia:** os dois lados começam com 120 de ouro e ganham 40 por turno. Abater um inimigo dá
+- **Economia:** os dois lados começam com 120 de ouro e ganham 35 por turno. Abater um inimigo dá
   25% do custo dele como saque.
-- **Recrutar:** a tropa nasce na casa 0, se ela estiver livre (por isso, na prática, 1 recruta por
-  turno).
+- **Recrutar:** até **2 recrutas por turno**. A tropa nasce na casa 0; se ela estiver ocupada, na
+  primeira casa livre até a casa 2. Botão desabilitado diz o motivo (`sem ouro`, `limite/turno` ou
+  `sem espaço`), e passar o mouse ou tentar recrutar mostra a explicação (ex.: "Acampamento
+  ocupado: mova a tropa da casa 0").
 - **Ordens (por tropa, ficam valendo até você mudar):**
   - **Avançar** (padrão): ataca se já tiver alvo ao alcance; senão anda até o movimento acabar ou
     até ter alvo, e então ataca. Arqueiros dão um passo à frente se continuarem fora do corpo a
@@ -50,7 +52,8 @@ impacto metálico, cornetas) são sintetizados com Web Audio.
 | Fundíbulo           | 90    | 22   | 20     | 1      | 1   | 4       | lento (não ataca no turno em que anda); ×3 contra o estandarte       |
 | Estratego (general) | —     | 70   | 18     | 6      | 1   | 1       | único, começa em campo; se cair, o lado perde moral (−25% de ataque) |
 
-Estandarte: 160 de vida, defesa 4.
+Estandarte: 100 de vida, defesa 4. Toda tropa causa ×2 nele (o fundíbulo, ×3). Uma tropa que chega à
+casa vizinha ao estandarte sem inimigo na frente ataca o estandarte automaticamente.
 
 ### Triângulo de vantagens
 
@@ -78,17 +81,22 @@ indisponíveis e o exército inteiro ataca com −25%.
 
 ### Vitória e derrota
 
-- **Vitória:** derrubar o estandarte de Quelmora **ou** eliminar o Estratego rival e todas as tropas dele.
-- **Derrota:** o seu estandarte cair (ou você perder general e todas as tropas).
+- **Vitória:** derrubar o estandarte de Quelmora **ou** eliminar o Estratego rival e todas as tropas
+  dele **quando Quelmora não tiver ouro para recrutar** (com ouro, ela reage e o cerco continua).
+- **Derrota:** o seu estandarte cair (ou a mesma aniquilação acontecer com você).
 - **Limite de 30 turnos:** ao fim do turno 30 vence quem tiver o estandarte com mais vida; se empatar,
   vence quem tiver mais vida somada de tropas em campo; empate total = Quelmora mantém o vale.
 
 ### IA de Quelmora
 
-- Recruta todo turno conforme o ouro e **reage à sua composição**: lança-longas se você tem
-  cavalaria, cavaleiros se você tem arqueiros/fundíbulos, arqueiros se você tem muitas lança-longas,
-  sempre pelo menos um escudeiro e, a partir do turno 5, um fundíbulo (às vezes poupa ouro para ele).
-- Junta uma onda de 3 tropas perto do quartel antes de marchar; depois todos avançam.
+- Recruta até 2 por turno (o mesmo limite seu) conforme o ouro e **reage à sua composição**:
+  cavaleiros para caçar seus fundíbulos, lança-longas se você tem cavalaria, cavaleiros se você tem
+  arqueiros, arqueiros se você tem muitas lança-longas, sempre pelo menos um escudeiro e, a partir do
+  turno 5, um fundíbulo (às vezes poupa ouro para ele).
+- Junta uma onda de 3 tropas perto do quartel antes de marchar e **não marcha uma tropa sozinha**: a
+  ponta espera a fileira se ela ficou mais de 2 casas para trás.
+- **Vai para o estandarte quando tem vantagem** (vida somada das tropas 30% maior) ou a partir do
+  turno 20 se não estiver à frente no placar dos estandartes: aí ninguém segura posição.
 - O Estratego recua quando fica com menos de 30% da vida.
 - **Protege o estandarte:** com uma tropa sua a até 4 casas dele, prioriza escudeiros/lança-longas,
   atiradores seguram posição, o general fica de guarda e a Muralha é usada.
@@ -164,18 +172,23 @@ scripts/simulate.ts       simulação de balanceamento fora do navegador
 `npm run sim -- 1000`: 1000 partidas por bot do jogador (lado 0) contra a IA (lado 1), mesmas regras
 do jogo, sem navegador.
 
-| Bot do jogador                                                                                                                                | Vitórias  | Turnos (média · p10–p90) |
-| --------------------------------------------------------------------------------------------------------------------------------------------- | --------- | ------------------------ |
-| **pensante** — recruta todo turno, contra-recruta, mantém um fundíbulo, usa as habilidades com aliados perto, tira o general ferido da frente | **87,8%** | 21,9 · 10–30             |
-| **aleatório** — recruta qualquer tropa que der, todos avançam, habilidades assim que prontas                                                  | 50,4%     | 19,9 · 11–30             |
-| **espelho** — o próprio cérebro da IA jogando por Calídria                                                                                    | 53,6%     | 23,2 · 13–30             |
-| **simples** — ciclo fixo de recrutas, poupa para a próxima da lista, todos avançam                                                            | 10,7%     | 19,9 · 14–30             |
-| **tartaruga** — só escudeiros e arqueiros segurando perto do quartel                                                                          | 1,3%      | 23,4 · 16–30             |
+| Bot do jogador                                                                                                                                     | Vitórias  | pelo estandarte  | pelo limite de turnos | Turnos (média · p10–p90) |
+| -------------------------------------------------------------------------------------------------------------------------------------------------- | --------- | ---------------- | --------------------- | ------------------------ |
+| **pensante**: até 2 recrutas por turno, contra-recruta, mantém um fundíbulo, usa as habilidades com aliados perto, tira o general ferido da frente | **70,3%** | 87% das vitórias | 13% das vitórias      | 20,8 · 16–30             |
+| **aleatório**: recruta qualquer tropa que der, todos avançam, habilidades assim que prontas                                                        | 29,2%     | 42%              | 58%                   | 27,1 · 20–30             |
+| **espelho**: o próprio cérebro da IA jogando por Calídria                                                                                          | 52,0%     | 53%              | 47%                   | 26,9 · 21–30             |
+| **simples**: ciclo fixo de recrutas, poupa para a próxima da lista, todos avançam                                                                  | 32,1%     | 35%              | 65%                   | 28,3 · 23–30             |
+| **tartaruga**: só escudeiros e arqueiros segurando perto do quartel                                                                                | 0,4%      | 0%               | 100%                  | 26,7 · 20–30             |
 
 Leitura: quem pensa (recrutar sempre, combinar o triângulo, guardar as habilidades para quando há
-tropas perto do general) vence com folga; spam de uma tropa só, poupar demais ou ficar na defensiva
-perde. Bots que recrutam um tipo só de tropa vencem de 0% a 7%. A animação de cada turno leva cerca de
-5–8 s; com o planejamento, uma partida de ~20 turnos dura de 8 a 13 minutos.
+tropas perto do general) vence 7 em 10, e quase sempre derrubando o estandarte (612 de 703
+vitórias; só 91 pelo limite de turnos e nenhuma por aniquilação). Jogar no aleatório, poupar demais
+ou ficar na defensiva perde. A animação de cada turno leva cerca de 5–8 s; com o planejamento, uma
+partida de ~20 turnos dura de 8 a 13 minutos. O ouro do bot pensante fica em ~110 em média no fim de
+cada rodada (dá para 1–2 tropas); quando sobra mais, é porque o campo está cheio perto do seu quartel.
+
+Numa partida no navegador (build de produção, Espaço acelerando a animação), o roteiro "pensante"
+venceu no turno 21 derrubando o estandarte de Quelmora (100 → 0), terminando com 3 de ouro.
 
 ## Créditos
 
@@ -194,15 +207,21 @@ perde. Bots que recrutam um tipo só de tropa vencem de 0% a 7%. A animação de
   já tinha uma "## 7. Checklist", mantida intacta; a nova seção foi só acrescentada ao fim, como pedido).
 - **Resolução por lado, não simultânea:** primeiro todas as suas tropas agem (da frente para trás),
   depois Quelmora planeja e age. É mais legível de animar e de prever. O jogador começa, o que dá uma
-  leve vantagem (IA × IA: 53,6% para quem começa).
+  leve vantagem (IA × IA: 52% para quem começa).
 - **Dano determinístico** (sem sorte) para a previsão bater com o resultado. A previsão considera o
   estado atual; se uma tropa da frente abater o alvo antes, a de trás escolhe outro.
 - **Revide** de 50% só para tropas de choque, para dar sentido a atiradores e à investida.
 - **Atravessar aliados sem gastar movimento** e **troca de fileira** (tropa de choque passa à frente de
   um aliado parado/atirador): sem isso o eixo de 12 casas travava em filas, nas simulações.
-- **Recrutamento só na casa 0 livre** (como pedido): limita a 1 recruta por turno; se a casa 0 estiver
-  ocupada por uma tropa sua em "Segurar", você não recruta. A IA nunca deixa a própria casa de recruta
-  parada.
+- **Recrutamento:** até 2 por turno (era 1 e o ouro sobrava). Com a casa 0 ocupada, a recruta nasce na
+  primeira casa livre até a casa 2; o botão e a dica dizem por que não dá para recrutar. A IA tem o mesmo
+  limite e nunca deixa a própria casa de recruta parada.
+- **Estandarte decisivo:** vida 160 → 100 e ×2 de dano de qualquer tropa nele (fundíbulo ×3). A
+  aniquilação só conta se o lado também estiver sem ouro para recrutar; senão a vitória vinha fácil
+  demais, antes do cerco. Pensei em renda/moral ligada ao estandarte e em manutenção por tropa, mas
+  nas simulações isso travava a frente e aumentava as vitórias por tempo, então ficou de fora.
+- **Nomes:** a cidade rival virou **Quelmora** e o vale, **Vale de Brumacor** (nomes anteriores
+  lembravam pessoas e lugares reais).
 - **Ordens persistem** entre turnos (menos cliques); o padrão de toda tropa nova é Avançar.
 - **Z/Espaço** "confirma" mantendo a ordem atual e pula para a próxima tropa (da frente para trás);
   X/Shift já aplica a próxima ordem. Segurar Espaço durante o combate acelera a animação 3×.
@@ -222,6 +241,6 @@ perde. Bots que recrutam um tipo só de tropa vencem de 0% a 7%. A animação de
 
 - Terreno com efeito (colina dá alcance, ruína dá defesa) e mais de uma faixa de batalha.
 - Ordem de "mirar" para escolher o alvo dos arqueiros e do fundíbulo.
-- IA mais esperta contra jogadores que só recrutam sem plano (hoje o bot aleatório vence ~50%).
+- Algo para gastar o ouro quando o campo está cheio (reforçar o estandarte, curar tropas).
 - Formação de falange (bônus de defesa para escudeiros lado a lado) e moral por unidade.
 - Trilha sonora de marcha em loop e volume na pausa.
