@@ -116,11 +116,17 @@ export const BAL = {
   casas: 12,
   maxTurnos: 30,
   ouroInicial: 120,
-  renda: 40,
+  renda: 35,
   /** bônus de ouro por inimigo abatido (fração do custo) */
   saque: 0.25,
-  estandarteVida: 160,
+  estandarteVida: 100,
   estandarteDefesa: 4,
+  /** multiplicador padrão de qualquer tropa contra o estandarte (o fundíbulo tem o seu) */
+  contraEstandarte: 2,
+  /** recrutas por turno */
+  recrutasPorTurno: 2,
+  /** se a casa do quartel estiver ocupada, a recruta nasce até esta distância dele */
+  recrutaCasas: 2,
   /** fórmula: dano = ataque * mult * K / (K + defesa) */
   defesaK: 12,
   danoMinimo: 1,
@@ -159,6 +165,10 @@ export const BAL = {
     onda: 3,
     /** casa (a partir do próprio estandarte) onde a onda espera */
     ondaCasa: 3,
+    /** vida somada das tropas acima da do jogador (×) para partir para o estandarte */
+    vantagem: 1.3,
+    /** turno a partir do qual a IA ataca se não estiver à frente no placar */
+    urgencia: 20,
   },
 } as const;
 

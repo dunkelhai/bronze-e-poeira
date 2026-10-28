@@ -2,7 +2,7 @@
  * Simulação de partidas fora do navegador: bots do jogador (lado 0) contra a IA do rival (lado 1).
  * Uso: `npm run sim` (opcional: `npm run sim -- 500` para o nº de partidas por bot).
  */
-import { RECRUIT_ORDER, UNITS, type RecruitKind } from '../src/config/balance';
+import { BAL, RECRUIT_ORDER, UNITS, type RecruitKind } from '../src/config/balance';
 import { aiPlan, countKinds, planAbilities } from '../src/systems/ai';
 import {
   canRecruit,
@@ -27,8 +27,10 @@ type Bot = (b: Battle, side: Side, rng: Rng, mem: { i: number }) => void;
 
 /** Recruta qualquer coisa que der, todos avançam, habilidades assim que prontas. */
 const aleatorio: Bot = (b, side, rng) => {
-  const opts = RECRUIT_ORDER.filter((k) => canRecruit(b, side, k));
-  if (opts.length) recruit(b, side, opts[Math.floor(rng() * opts.length)]);
+  for (let i = 0; i < BAL.recrutasPorTurno; i++) {
+    const opts = RECRUIT_ORDER.filter((k) => canRecruit(b, side, k));
+    if (opts.length) recruit(b, side, opts[Math.floor(rng() * opts.length)]);
+  }
   for (const u of frontOrder(b, side)) u.order = 'avancar';
   if (canUseAbility(b, side, 'brado')) useAbility(b, side, 'brado');
   if (canUseAbility(b, side, 'muralha')) useAbility(b, side, 'muralha');
@@ -45,8 +47,9 @@ const CICLO: RecruitKind[] = [
   'fundibulo',
 ];
 const simples: Bot = (b, side, _rng, mem) => {
-  const k = CICLO[mem.i % CICLO.length];
-  if (canRecruit(b, side, k)) {
+  for (let i = 0; i < BAL.recrutasPorTurno; i++) {
+    const k = CICLO[mem.i % CICLO.length];
+    if (!canRecruit(b, side, k)) break;
     recruit(b, side, k);
     mem.i++;
   }
@@ -63,7 +66,19 @@ const espelho: Bot = (b, side, rng) => {
  * Bot "pensante": recruta todo turno, contra-recruta a composição do rival, mantém um fundíbulo,
  * tira o general ferido da frente e usa as habilidades quando há aliados perto.
  */
-const pensante: Bot = (b, side, _rng, mem) => {
+const pensante: Bot = (b, side, rng, mem) => {
+  for (let i = 0; i < BAL.recrutasPorTurno; i++) pensaRecruta(b, side, mem);
+  for (const u of frontOrder(b, side)) {
+    u.order = 'avancar';
+    if (u.kind === 'general' && u.hp < u.maxHp * 0.35 && u.cell > 2) u.order = 'recuar';
+  }
+  const near = nearGeneral(b, side, 2).length - 1;
+  if (near >= 1 && canUseAbility(b, side, 'brado')) useAbility(b, side, 'brado');
+  if (near >= 1 && canUseAbility(b, side, 'muralha')) useAbility(b, side, 'muralha');
+  void rng;
+};
+
+function pensaRecruta(b: Battle, side: Side, mem: { i: number }): void {
   const foe = countKinds(b, other(side));
   const own = countKinds(b, side);
   const gold = b.sides[side].gold;
@@ -80,19 +95,13 @@ const pensante: Bot = (b, side, _rng, mem) => {
       ) ?? null;
   }
   if (want && recruit(b, side, want)) mem.i++;
-  for (const u of frontOrder(b, side)) {
-    u.order = 'avancar';
-    if (u.kind === 'general' && u.hp < u.maxHp * 0.35 && u.cell > 2) u.order = 'recuar';
-  }
-  const near = nearGeneral(b, side, 2).length - 1;
-  if (near >= 1 && canUseAbility(b, side, 'brado')) useAbility(b, side, 'brado');
-  if (near >= 1 && canUseAbility(b, side, 'muralha')) useAbility(b, side, 'muralha');
-};
+}
 
 /** Só defende: escudeiros e arqueiros segurando perto do estandarte. */
 const tartaruga: Bot = (b, side, _rng, mem) => {
-  const k: RecruitKind = mem.i % 2 ? 'arqueiro' : 'escudeiro';
-  if (canRecruit(b, side, k)) {
+  for (let i = 0; i < BAL.recrutasPorTurno; i++) {
+    const k: RecruitKind = mem.i % 2 ? 'arqueiro' : 'escudeiro';
+    if (!canRecruit(b, side, k)) break;
     recruit(b, side, k);
     mem.i++;
   }

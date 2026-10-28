@@ -36,6 +36,8 @@ export interface SideState {
   kills: number;
   losses: number;
   recruited: number;
+  /** recrutas feitas no planejamento atual */
+  recruitsTurn: number;
 }
 
 export type EndReason = 'estandarte' | 'aniquilacao' | 'tempo' | 'debug';
@@ -86,6 +88,7 @@ function newSide(): SideState {
     kills: 0,
     losses: 0,
     recruited: 0,
+    recruitsTurn: 0,
   };
 }
 
@@ -141,18 +144,48 @@ export function frontOrder(b: Battle, side: Side): Unit[] {
 
 /* ---------------- recrutamento ---------------- */
 
+/** Motivo de não poder recrutar (null = pode). */
+export type RecruitBlock = 'fim' | 'ouro' | 'limite' | 'espaco';
+
+/**
+ * Casa onde a recruta nasce: a do quartel ou, se ocupada, a primeira livre do seu lado
+ * até `BAL.recrutaCasas` casas à frente. null = acampamento ocupado.
+ */
+export function spawnCell(b: Battle, side: Side): number | null {
+  for (let i = 0; i <= BAL.recrutaCasas; i++) {
+    const cell = bannerCell(side) + forward(side) * i;
+    if (!unitAt(b, side, cell) && !unitAt(b, other(side), cell)) return cell;
+  }
+  return null;
+}
+
+export function recruitBlock(b: Battle, side: Side, kind: RecruitKind): RecruitBlock | null {
+  if (b.result) return 'fim';
+  if (b.sides[side].recruitsTurn >= BAL.recrutasPorTurno) return 'limite';
+  if (spawnCell(b, side) === null) return 'espaco';
+  if (b.sides[side].gold < UNITS[kind].custo) return 'ouro';
+  return null;
+}
+
 export function canRecruit(b: Battle, side: Side, kind: RecruitKind): boolean {
-  if (b.result) return false;
-  if (b.sides[side].gold < UNITS[kind].custo) return false;
-  return !unitAt(b, side, bannerCell(side));
+  return recruitBlock(b, side, kind) === null;
 }
 
 export function recruit(b: Battle, side: Side, kind: RecruitKind): Unit | null {
   if (!canRecruit(b, side, kind)) return null;
+  const cell = spawnCell(b, side)!;
   b.sides[side].gold -= UNITS[kind].custo;
   b.sides[side].recruited++;
-  return makeUnit(b, side, kind, bannerCell(side));
+  b.sides[side].recruitsTurn++;
+  return makeUnit(b, side, kind, cell);
 }
+
+/** Menor custo de recruta (para saber se um lado ainda pode reagir). */
+export const CHEAPEST = Math.min(
+  ...(['escudeiro', 'lanceiro', 'arqueiro', 'cavaleiro', 'fundibulo'] as const).map(
+    (k) => UNITS[k].custo,
+  ),
+);
 
 export function setOrder(b: Battle, id: number, order: Order): void {
   const u = getUnit(b, id);
@@ -201,7 +234,8 @@ function attackMult(b: Battle, att: Unit, t: Target, dist: number, charge: boole
   if (!b.sides[att.side].generalAlive) mult *= BAL.moralPerdida;
   const targetKind: UnitKind | 'estandarte' =
     t.type === 'banner' ? 'estandarte' : (getUnit(b, t.id)?.kind ?? 'escudeiro');
-  mult *= MATCHUP[att.kind]?.[targetKind] ?? 1;
+  mult *=
+    MATCHUP[att.kind]?.[targetKind] ?? (targetKind === 'estandarte' ? BAL.contraEstandarte : 1);
   if (charge) mult *= BAL.investida;
   if (isRanged(att) && dist <= 1) mult *= BAL.pertoPenalidade;
   return mult;
@@ -378,7 +412,9 @@ function checkEnd(b: Battle): Result | null {
     if (b.sides[s].banner <= 0) return (b.result = { winner: other(s), reason: 'estandarte' });
   }
   for (const s of [0, 1] as Side[]) {
-    if (!b.sides[s].generalAlive && sideUnits(b, s).length === 0) {
+    // aniquilação: sem general, sem tropas e sem ouro para recrutar
+    const st = b.sides[s];
+    if (!st.generalAlive && sideUnits(b, s).length === 0 && st.gold < CHEAPEST) {
       return (b.result = { winner: other(s), reason: 'aniquilacao' });
     }
   }
@@ -455,6 +491,7 @@ export function actUnit(b: Battle, u: Unit): BattleEvent[] {
 
 /** Início do planejamento de um lado: a Muralha lançada no turno anterior expira. */
 export function startPlanning(b: Battle, side: Side): void {
+  b.sides[side].recruitsTurn = 0;
   for (const u of sideUnits(b, side)) u.defBuff = false;
 }
 
@@ -473,16 +510,24 @@ export function resolveSide(b: Battle, side: Side): BattleEvent[] {
 export const armyHp = (b: Battle, side: Side): number =>
   sideUnits(b, side).reduce((sum, u) => sum + u.hp, 0);
 
+/** Renda do turno. */
+export function income(b: Battle, side: Side): number {
+  void b;
+  void side;
+  return BAL.renda;
+}
+
 /** Fim da rodada: renda, recargas e limite de turnos. */
 export function endRound(b: Battle): BattleEvent[] {
   if (b.result) return [];
-  for (const s of b.sides) {
-    s.gold += BAL.renda;
+  for (const side of [0, 1] as Side[]) {
+    const s = b.sides[side];
+    s.gold += income(b, side);
     s.cd.brado = Math.max(0, s.cd.brado - 1);
     s.cd.muralha = Math.max(0, s.cd.muralha - 1);
   }
   if (b.turn >= BAL.maxTurnos) {
-    // desempate: vida somada das tropas em campo; empate total = Vorsena mantém o vale
+    // desempate: vida somada das tropas em campo; empate total = Quelmora mantém o vale
     const diff = b.sides[0].banner - b.sides[1].banner || armyHp(b, 0) - armyHp(b, 1);
     const winner: Side = diff > 0 ? 0 : 1;
     b.result = { winner, reason: 'tempo' };
