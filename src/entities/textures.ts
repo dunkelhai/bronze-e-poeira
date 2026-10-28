@@ -149,7 +149,7 @@ function shield(g: G, x: number, y: number, r: number, team: (typeof TEAM)[numbe
   circle(g, x, y, r, PAL.bronze);
   g.lineStyle(3, PAL.bronzeEscuro, 1);
   g.strokeCircle(x, y, r - 4);
-  // emblema: onda (Calídria) ou chama (Vorsena)
+  // emblema: onda (Calídria) ou chama (Quelmora)
   if (side === 0) {
     g.lineStyle(4, team.base, 1);
     g.beginPath();

@@ -64,7 +64,7 @@ export class TitleScene extends Phaser.Scene {
     this.tweens.add({ targets: title, scale: 1, duration: 300, ease: 'Back.easeOut' });
 
     this.add
-      .text(640, 262, 'Calídria contra Vorsena pela posse do Vale de Ístrion', {
+      .text(640, 262, 'Calídria contra Quelmora pela posse do Vale de Brumacor', {
         fontFamily: FONT_UI,
         fontStyle: '800',
         fontSize: '26px',

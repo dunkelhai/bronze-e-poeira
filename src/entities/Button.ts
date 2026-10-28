@@ -14,6 +14,8 @@ export interface ButtonOpts {
   textDx?: number;
   color?: number;
   onClick: () => void;
+  /** chamado ao clicar com o botão desabilitado (para explicar o motivo) */
+  onDenied?: () => void;
 }
 
 export class Button {
@@ -78,6 +80,7 @@ export class Button {
   press(): void {
     if (!this.enabled) {
       sfx.denied();
+      this.o.onDenied?.();
       return;
     }
     sfx.ui();

@@ -16,9 +16,9 @@ export interface EndData {
 }
 
 const REASON: Record<EndReason, [string, string]> = {
-  estandarte: ['O estandarte de Vorsena tombou na poeira.', 'O estandarte de Calídria tombou.'],
+  estandarte: ['O estandarte de Quelmora tombou na poeira.', 'O estandarte de Calídria tombou.'],
   aniquilacao: [
-    'O estratego e todo o exército de Vorsena caíram.',
+    'O estratego e todo o exército de Quelmora caíram, sem ouro para reagir.',
     'Seu estratego e todas as suas tropas caíram.',
   ],
   tempo: [
@@ -52,7 +52,7 @@ export class EndScene extends Phaser.Scene {
       REASON[d.reason][d.won ? 0 : 1],
       `Turnos: ${d.turn}/${BAL.maxTurnos}   ·   Tempo: ${mm}:${ss}`,
       `Tropas recrutadas: ${d.recruited}   ·   Abates: ${d.kills}   ·   Baixas: ${d.losses}`,
-      `Estandartes: Calídria ${d.banner[0]}  ·  Vorsena ${d.banner[1]}`,
+      `Estandartes: Calídria ${d.banner[0]}  ·  Quelmora ${d.banner[1]}`,
     ];
     this.add
       .text(640, 410, lines.join('\n'), {

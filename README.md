@@ -2,7 +2,7 @@
 
 Batalha de exércitos por turnos em visão lateral, no clima dos épicos de "espada e sandália". Duas
 cidades-estado inventadas de uma antiguidade mediterrânea imaginária, **Calídria** (azul-egeu, você)
-e **Vorsena** (carmim, a IA), disputam o **Vale de Ístrion**. Cada lado tem quartel e estandarte nas
+e **Quelmora** (carmim, a IA), disputam o **Vale de Brumacor**. Cada lado tem quartel e estandarte nas
 pontas de um eixo de 12 casas; recrute tropas, dê ordens, use o seu Estratego e derrube o estandarte
 inimigo.
 
@@ -14,7 +14,7 @@ impacto metálico, cornetas) são sintetizados com Web Audio.
 
 ## Como se joga
 
-- **Campo:** casas 0 a 11. Seu quartel e estandarte ficam na casa 0 (esquerda) e os de Vorsena na
+- **Campo:** casas 0 a 11. Seu quartel e estandarte ficam na casa 0 (esquerda) e os de Quelmora na
   casa 11 (direita). Cabe 1 unidade por casa por lado. Ninguém atravessa um inimigo nem entra no
   acampamento rival; aliados abrem passagem (atravessar uma casa com aliado não gasta movimento).
 - **Economia:** os dois lados começam com 120 de ouro e ganham 40 por turno. Abater um inimigo dá
@@ -29,7 +29,7 @@ impacto metálico, cornetas) são sintetizados com Web Audio.
   - **Recuar:** volta em direção ao quartel e não ataca.
 - **Turno:** recrutar → ordens → habilidade do general → **Encerrar turno**. Suas tropas agem da
   frente para trás, com animação (marcha, golpe, número de dano, recuo, poeira, hit-flash); depois
-  Vorsena recruta, usa o general e ataca. Então vem a renda e o próximo turno.
+  Quelmora recruta, usa o general e ataca. Então vem a renda e o próximo turno.
 - **Combate:** dano = ataque × multiplicadores × 12 / (12 + defesa), arredondado (mínimo 1).
   Golpes corpo a corpo levam **revide** de 50% se o alvo sobreviver e for de choque (escudeiro,
   lança-longa, cavaleiro, estratego). Arqueiro e fundíbulo causam metade do dano em alvo adjacente.
@@ -78,12 +78,12 @@ indisponíveis e o exército inteiro ataca com −25%.
 
 ### Vitória e derrota
 
-- **Vitória:** derrubar o estandarte de Vorsena **ou** eliminar o Estratego rival e todas as tropas dele.
+- **Vitória:** derrubar o estandarte de Quelmora **ou** eliminar o Estratego rival e todas as tropas dele.
 - **Derrota:** o seu estandarte cair (ou você perder general e todas as tropas).
 - **Limite de 30 turnos:** ao fim do turno 30 vence quem tiver o estandarte com mais vida; se empatar,
-  vence quem tiver mais vida somada de tropas em campo; empate total = Vorsena mantém o vale.
+  vence quem tiver mais vida somada de tropas em campo; empate total = Quelmora mantém o vale.
 
-### IA de Vorsena
+### IA de Quelmora
 
 - Recruta todo turno conforme o ouro e **reage à sua composição**: lança-longas se você tem
   cavalaria, cavaleiros se você tem arqueiros/fundíbulos, arqueiros se você tem muitas lança-longas,
@@ -152,7 +152,7 @@ src/
   config/balance.ts       TODAS as constantes de balanceamento (tropas, triângulo, economia, IA)
   style/palette.ts        paleta da seção 7 do guia de estilo
   systems/battle.ts       regras puras (eixo, movimento, combate, habilidades, fim de jogo)
-  systems/ai.ts           IA de Vorsena
+  systems/ai.ts           IA de Quelmora
   systems/               áudio, efeitos (shake, flash, pop, números), RNG, opções
   entities/               texturas geradas, cenário com parallax, estandartes, unidade, botão
   scenes/                 Boot, Title, Battle, Pause, End
@@ -186,14 +186,14 @@ perde. Bots que recrutam um tipo só de tropa vencem de 0% a 7%. A animação de
 
 ## Decisões
 
-- **Cenário e nomes inventados:** Calídria (jogador, azul-egeu) × Vorsena (rival, carmim) no Vale de
-  Ístrion; tropas Escudeiro de Bronze, Lança-Longa, Arqueiro de Junco, Cavaleiro da Poeira e
+- **Cenário e nomes inventados:** Calídria (jogador, azul-egeu) × Quelmora (rival, carmim) no Vale de
+  Brumacor; tropas Escudeiro de Bronze, Lança-Longa, Arqueiro de Junco, Cavaleiro da Poeira e
   Fundíbulo; general "Estratego"; habilidades "Brado do Vale" e "Muralha de Bronze". Nenhuma pessoa,
   deus ou batalha real.
 - **Direção de arte** registrada como seção "## 7. bronze-e-poeira" no fim do `STYLE_GUIDE.md` (o guia
   já tinha uma "## 7. Checklist", mantida intacta; a nova seção foi só acrescentada ao fim, como pedido).
 - **Resolução por lado, não simultânea:** primeiro todas as suas tropas agem (da frente para trás),
-  depois Vorsena planeja e age. É mais legível de animar e de prever. O jogador começa, o que dá uma
+  depois Quelmora planeja e age. É mais legível de animar e de prever. O jogador começa, o que dá uma
   leve vantagem (IA × IA: 53,6% para quem começa).
 - **Dano determinístico** (sem sorte) para a previsão bater com o resultado. A previsão considera o
   estado atual; se uma tropa da frente abater o alvo antes, a de trás escolhe outro.
@@ -208,7 +208,7 @@ perde. Bots que recrutam um tipo só de tropa vencem de 0% a 7%. A animação de
   X/Shift já aplica a próxima ordem. Segurar Espaço durante o combate acelera a animação 3×.
 - **Saque** de 25% do custo ao abater, para premiar trocas boas sem virar bola de neve.
 - **Desempate do limite de 30 turnos:** vida do estandarte; depois vida somada das tropas; empate total
-  = vitória de Vorsena (o defensor do vale).
+  = vitória de Quelmora (o defensor do vale).
 - **General:** começa em campo na casa 1 (rival na 10), não pode ser recrutado de novo. Moral perdida =
   −25% no ataque de todo o exército até o fim.
 - **Tela de título** com "pressione Espaço" + controles (sem menu Jogar/Opções), e "Reduzir

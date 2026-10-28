@@ -44,7 +44,7 @@ export const PALS = {
 export const FONT_TITLE = '"Cinzel Decorative", serif';
 export const FONT_UI = 'Rubik, sans-serif';
 
-/** Cor do time: 0 = Calídria (jogador, azul-egeu), 1 = Vorsena (rival, carmim). */
+/** Cor do time: 0 = Calídria (jogador, azul-egeu), 1 = Quelmora (rival, carmim). */
 export const TEAM = [
   { base: PAL.egeu, dark: PAL.egeuEscuro, css: PALS.egeuClaro },
   { base: PAL.carmim, dark: PAL.carmimEscuro, css: PALS.carmimClaro },

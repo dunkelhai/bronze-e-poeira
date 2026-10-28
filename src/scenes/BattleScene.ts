@@ -11,6 +11,7 @@ import {
   ORDERS,
   ORDER_NAME,
   canRecruit,
+  recruitBlock,
   canUseAbility,
   computeDamage,
   createBattle,
@@ -90,6 +91,7 @@ export class BattleScene extends Phaser.Scene {
   private hint!: Phaser.GameObjects.Text;
   private announce!: Phaser.GameObjects.Text;
   private recruitBtns: Button[] = [];
+  private costTexts: Phaser.GameObjects.Text[] = [];
   private orderBtns: Button[] = [];
   private abilityBtns: Record<Ability, Button> = {} as Record<Ability, Button>;
   private endBtn!: Button;
@@ -117,6 +119,7 @@ export class BattleScene extends Phaser.Scene {
     this.views.clear();
     // a instância da cena é reaproveitada no restart: zere as listas do HUD
     this.recruitBtns = [];
+    this.costTexts = [];
     this.orderBtns = [];
     this.moraleText = [];
     this.bannerFill = [];
@@ -234,7 +237,7 @@ export class BattleScene extends Phaser.Scene {
     top.fillRoundedRect(40, 8, 440, 64, 12);
     top.fillRoundedRect(800, 8, 440, 64, 12);
     top.fillRoundedRect(520, 8, 240, 64, 12);
-    const names = ['Calídria', 'Vorsena'];
+    const names = ['Calídria', 'Quelmora'];
     for (const side of [0, 1] as const) {
       const x0 = side === 0 ? 56 : 816;
       text(this, x0, 14, names[side], 20, TEAM[side].css);
@@ -285,6 +288,7 @@ export class BattleScene extends Phaser.Scene {
         hotkey: String(i + 1),
         color: PAL.terracota,
         onClick: () => this.doRecruit(kind),
+        onDenied: () => this.explainBlock(kind, true),
       });
       const icon = this.add.image(0, 8, `u_${kind}_0`).setOrigin(0.5, 1).setScale(0.62);
       const name = text(this, 0, 22, SHORT[kind], 16, PALS.marfim).setOrigin(0.5, 0.5);
@@ -293,7 +297,11 @@ export class BattleScene extends Phaser.Scene {
         0.5,
       );
       btn.c.add([icon, name, cost]);
-      btn.c.on('pointerover', () => this.setHint(this.unitHint(kind)));
+      this.costTexts.push(cost);
+      btn.c.on('pointerover', () => {
+        const why = this.blockText(kind);
+        this.setHint(why ? `${why}  ·  ${SHORT[kind]}: ${UNITS[kind].papel}` : this.unitHint(kind));
+      });
       btn.c.on('pointerout', () => this.setHint(''));
       this.recruitBtns.push(btn);
     });
@@ -515,6 +523,31 @@ export class BattleScene extends Phaser.Scene {
     this.select(list[(i + 1) % list.length].id);
   }
 
+  /** Motivo, em palavras, de não poder recrutar (null = pode). */
+  private blockText(kind: RecruitKind): string | null {
+    if (this.phase !== 'plan') return null;
+    const why = recruitBlock(this.b, 0, kind);
+    const me = this.b.sides[0];
+    switch (why) {
+      case 'ouro':
+        return `Ouro insuficiente: faltam ${UNITS[kind].custo - me.gold}.`;
+      case 'limite':
+        return `Limite de ${BAL.recrutasPorTurno} recrutas por turno: encerre o turno.`;
+      case 'espaco':
+        return 'Acampamento ocupado: mova a tropa da casa 0 (casas 0 a 2 cheias).';
+      default:
+        return null;
+    }
+  }
+
+  private explainBlock(kind: RecruitKind, loud: boolean): void {
+    const why = this.blockText(kind);
+    if (!why) return;
+    this.setHint(why);
+    if (loud && recruitBlock(this.b, 0, kind) === 'espaco')
+      this.showAnnounce('Acampamento ocupado!');
+  }
+
   private doRecruit(kind: RecruitKind): void {
     if (this.phase !== 'plan') return;
     const u = recruit(this.b, 0, kind);
@@ -562,7 +595,7 @@ export class BattleScene extends Phaser.Scene {
     startPlanning(this.b, 1);
     this.syncBuffs();
     this.refresh();
-    this.showAnnounce('Vorsena responde!');
+    this.showAnnounce('Quelmora responde!');
     await wait(this, 350);
     await this.playEvents(aiPlan(this.b, 1, this.rng), 1);
     await this.playEvents(resolveSide(this.b, 1), 1);
@@ -838,7 +871,7 @@ export class BattleScene extends Phaser.Scene {
     this.turnText.setText(`Turno ${b.turn}/${BAL.maxTurnos}`);
     this.phaseText.setText(
       this.phase === 'plan'
-        ? 'Suas ordens'
+        ? `Suas ordens · recrutas ${me.recruitsTurn}/${BAL.recrutasPorTurno}`
         : this.phase === 'resolve'
           ? 'Combate!'
           : 'Fim da batalha',
@@ -850,9 +883,14 @@ export class BattleScene extends Phaser.Scene {
       this.moraleText[s].setText(st.generalAlive ? 'Moral firme' : 'Moral −25%');
       this.moraleText[s].setColor(st.generalAlive ? PALS.verde : PALS.carmimClaro);
     }
-    RECRUIT_ORDER.forEach((k, i) =>
-      this.recruitBtns[i].setEnabled(planning && canRecruit(b, 0, k)),
-    );
+    const SHORT_WHY = { ouro: 'sem ouro', limite: 'limite/turno', espaco: 'sem espaço', fim: '' };
+    RECRUIT_ORDER.forEach((k, i) => {
+      this.recruitBtns[i].setEnabled(planning && canRecruit(b, 0, k));
+      const why = planning ? recruitBlock(b, 0, k) : null;
+      const label = why && why !== 'fim' ? SHORT_WHY[why] : `${UNITS[k].custo}`;
+      this.costTexts[i]?.setText(label).setColor(why ? PALS.carmimClaro : PALS.ceuHorizonte);
+      this.costTexts[i]?.setFontSize(why ? 16 : 18);
+    });
     for (const ab of ['brado', 'muralha'] as Ability[]) {
       const cd = me.cd[ab];
       const btn = this.abilityBtns[ab];
@@ -935,7 +973,7 @@ export class BattleScene extends Phaser.Scene {
     if (hovered && hovered.side === 1) {
       const st = UNITS[hovered.kind];
       const lines = [
-        `${st.nome} de Vorsena  ${hovered.hp}/${hovered.maxHp}`,
+        `${st.nome} de Quelmora  ${hovered.hp}/${hovered.maxHp}`,
         `ATQ ${st.ataque} DEF ${st.defesa} ALC ${st.alcance}`,
       ];
       if (sel) {
